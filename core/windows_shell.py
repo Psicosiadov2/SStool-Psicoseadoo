@@ -16,6 +16,16 @@ SWP_NOMOVE = 0x0002
 SWP_NOZORDER = 0x0004
 SWP_FRAMECHANGED = 0x0020
 SW_MINIMIZE = 6
+SPI_GETWORKAREA = 0x0030
+
+
+class RECT(ctypes.Structure):
+    _fields_ = [
+        ("left", ctypes.c_long),
+        ("top", ctypes.c_long),
+        ("right", ctypes.c_long),
+        ("bottom", ctypes.c_long),
+    ]
 
 
 def configure_process_identity():
@@ -81,6 +91,30 @@ def minimize_taskbar_window(window):
     """Minimiza el HWND real mediante Windows, sin crear el icono antiguo de Tk."""
     if not sys.platform.startswith("win"):
         return False
+
+
+def get_work_area(window):
+    """Devuelve el area util del monitor sin cubrir la barra de tareas."""
+    if sys.platform.startswith("win"):
+        try:
+            rectangle = RECT()
+            if ctypes.windll.user32.SystemParametersInfoW(
+                SPI_GETWORKAREA, 0, ctypes.byref(rectangle), 0
+            ):
+                return (
+                    rectangle.left,
+                    rectangle.top,
+                    rectangle.right - rectangle.left,
+                    rectangle.bottom - rectangle.top,
+                )
+        except (AttributeError, OSError):
+            pass
+    return (
+        window.winfo_vrootx(),
+        window.winfo_vrooty(),
+        window.winfo_vrootwidth(),
+        window.winfo_vrootheight(),
+    )
     try:
         window.update_idletasks()
         force_taskbar_window(window)

@@ -18,7 +18,7 @@ from core.config import (
 )
 from core.data import CATEGORIES, get_category
 from core.i18n import DEFAULT_LANGUAGE, tr
-from core.launcher import launch_tool
+from core.launcher import ensure_tools_root, launch_tool
 from core.windows_shell import (
     asset_path,
     force_taskbar_window,
@@ -30,7 +30,11 @@ from ui.content import ContentArea
 from ui.toast import ToastBanner
 from ui.resize import ResizeHandles
 from ui.splash import StartupSplash
-from ui.motion import frame_delay
+from ui.motion import (
+    disable_high_resolution_timer,
+    enable_high_resolution_timer,
+    frame_delay,
+)
 
 
 class App(ctk.CTk):
@@ -53,9 +57,38 @@ class App(ctk.CTk):
         self.minsize(min(WINDOW_MIN_WIDTH, width), min(WINDOW_MIN_HEIGHT, height))
         self.configure(fg_color=theme.BG_APP)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=0, minsize=theme.TITLEBAR_HEIGHT)
-        self.grid_rowconfigure(1, weight=0, minsize=theme.TOPNAV_HEIGHT)
-        self.grid_rowconfigure(2, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        # Capas de brillo alrededor del panel principal. CTk no ofrece blur
+        # nativo, por lo que estas capas crean profundidad sin penalizar FPS.
+        self.ambient_glow = ctk.CTkFrame(
+            self,
+            fg_color=theme.AMBIENT_BLUE,
+            corner_radius=theme.SHELL_RADIUS + 5,
+        )
+        self.ambient_glow.grid(
+            row=0, column=0, sticky="nsew", padx=3, pady=3
+        )
+        self.soft_glow = ctk.CTkFrame(
+            self,
+            fg_color=theme.RED_DARK,
+            corner_radius=theme.SHELL_RADIUS + 3,
+        )
+        self.soft_glow.grid(
+            row=0, column=0, sticky="nsew", padx=6, pady=6
+        )
+        self.shell = ctk.CTkFrame(
+            self,
+            fg_color=theme.BG_CONTENT,
+            corner_radius=theme.SHELL_RADIUS,
+            border_width=1,
+            border_color=theme.BORDER_GLOW,
+        )
+        self.shell.grid(row=0, column=0, sticky="nsew", padx=9, pady=9)
+        self.shell.grid_columnconfigure(0, weight=1)
+        self.shell.grid_rowconfigure(0, weight=0, minsize=theme.TITLEBAR_HEIGHT)
+        self.shell.grid_rowconfigure(1, weight=0, minsize=theme.TOPNAV_HEIGHT)
+        self.shell.grid_rowconfigure(2, weight=1)
 
         self._icon_image = None
         self._configure_window_icon()
@@ -67,25 +100,27 @@ class App(ctk.CTk):
         self._poll_job = None
         self._worker_slots = threading.Semaphore(2)
         self.language = DEFAULT_LANGUAGE
+        self._high_resolution_timer = enable_high_resolution_timer()
+        ensure_tools_root()
 
-        self.titlebar = TitleBar(self, self, on_language=self._set_language)
+        self.titlebar = TitleBar(self.shell, self, on_language=self._set_language)
 
         self.topnav = TopNav(
-            self,
+            self.shell,
             CATEGORIES,
             on_select_category=self._on_select_category,
         )
-        self.topnav.grid(row=1, column=0, sticky="ew")
+        self.topnav.grid(row=1, column=0, sticky="ew", padx=1)
 
-        self.content = ContentArea(self, on_launch=self._on_launch)
-        self.content.grid(row=2, column=0, sticky="nsew")
+        self.content = ContentArea(self.shell, on_launch=self._on_launch)
+        self.content.grid(row=2, column=0, sticky="nsew", padx=1, pady=(0, 1))
 
         self.toast = ToastBanner(self)
         self.resize_handles = ResizeHandles(self)
 
         self.content.show_category(CATEGORIES[0])
-        self.splash = StartupSplash(self, on_complete=self._on_splash_complete)
-        self.splash.grid(row=0, column=0, rowspan=3, sticky="nsew")
+        self.splash = StartupSplash(self.shell, on_complete=self._on_splash_complete)
+        self.splash.grid(row=0, column=0, rowspan=3, sticky="nsew", padx=1, pady=1)
         self.splash.tkraise()
         self.content.prepare_cards(CATEGORIES)
         self.protocol("WM_DELETE_WINDOW", self.close_app)
@@ -164,7 +199,7 @@ class App(ctk.CTk):
             pass
         try:
             if not self._closing and (self._busy_actions or not self._ui_messages.empty()):
-                self._poll_job = self.after(50, self._drain_ui_messages)
+                self._poll_job = self.after(8, self._drain_ui_messages)
         except tk.TclError:
             pass
 
@@ -175,7 +210,7 @@ class App(ctk.CTk):
 
         self._busy_actions.add(key)
         if self._poll_job is None:
-            self._poll_job = self.after(50, self._drain_ui_messages)
+            self._poll_job = self.after(8, self._drain_ui_messages)
         self.content.set_busy(True)
         self.content.set_tool_busy(key, True)
         self._show_status(initial_message)
@@ -257,4 +292,7 @@ class App(ctk.CTk):
         self.content.set_busy(False)
         if self._poll_job is not None:
             self.after_cancel(self._poll_job)
+        if self._high_resolution_timer:
+            disable_high_resolution_timer()
+            self._high_resolution_timer = False
         self.destroy()

@@ -1,10 +1,12 @@
 import tkinter as tk
+import time
 import webbrowser
 
 import customtkinter as ctk
 
 from core import theme
 from core.i18n import category_label
+from ui.motion import ease_out_quint, frame_delay
 
 
 GITHUB_URL = "https://github.com/Psicoseado"
@@ -15,7 +17,8 @@ class TopNav(ctk.CTkFrame):
 
     def __init__(self, master, categories, on_select_category):
         super().__init__(master, height=theme.TOPNAV_HEIGHT,
-                         fg_color=theme.BG_TOPNAV, corner_radius=0)
+                         fg_color=theme.BG_TOPNAV, corner_radius=8,
+                         border_width=1, border_color=theme.BORDER_SUBTLE)
         self.grid_propagate(False)
         self.grid_rowconfigure(0, weight=1)
         self.on_select_category = on_select_category
@@ -23,12 +26,14 @@ class TopNav(ctk.CTkFrame):
         self.categories = {category["id"]: category for category in categories}
         self.language = "en"
         self._tabs = {}
+        self._indicators = {}
+        self._indicator_job = None
 
         github = ctk.CTkButton(
-            self, text="", width=46, height=theme.TOPNAV_HEIGHT,
-            corner_radius=0, fg_color="transparent",
+            self, text="", width=42, height=34,
+            corner_radius=8, fg_color=theme.BG_GLASS,
             hover_color=theme.RED_GHOST, command=self.open_github)
-        github.grid(row=0, column=0, sticky="nsew")
+        github.grid(row=0, column=0, padx=(8, 5), pady=6, sticky="nsew")
         lens = tk.Canvas(github, width=22, height=22, bg=theme.BG_TOPNAV,
                          highlightthickness=0, borderwidth=0, cursor="hand2")
         lens.create_oval(3, 3, 13, 13, outline=theme.TEXT_PRIMARY, width=2)
@@ -42,22 +47,34 @@ class TopNav(ctk.CTkFrame):
             self.grid_columnconfigure(button_column, weight=1)
             label = self._label(category)
             button = ctk.CTkButton(
-                self, text=label, width=1, height=theme.TOPNAV_HEIGHT,
-                corner_radius=0, fg_color="transparent",
+                self, text=label, width=1, height=34,
+                corner_radius=8, fg_color="transparent",
                 hover_color=theme.RED_GHOST, text_color=theme.TEXT_SECONDARY,
                 font=theme.FONT_TAB,
                 command=lambda cid=category["id"]: self.select(cid))
-            button.grid(row=0, column=button_column, sticky="nsew")
+            button.grid(row=0, column=button_column, padx=3, pady=6, sticky="nsew")
             self._tabs[category["id"]] = button
+            indicator = ctk.CTkFrame(
+                button, height=2, fg_color=theme.RED_BRIGHT, corner_radius=2
+            )
+            self._indicators[category["id"]] = indicator
             if index < len(categories) - 1:
                 self._separator(button_column + 1)
 
         ctk.CTkFrame(self, height=1, fg_color=theme.BORDER_SUBTLE,
                      corner_radius=0).place(relx=0, rely=1, relwidth=1, anchor="sw")
+        ctk.CTkFrame(
+            self, height=1, fg_color=theme.GLASS_REFLECTION,
+            corner_radius=1,
+        ).place(relx=.03, rely=0, relwidth=.94)
         self._style_tab(self.active_id, True)
+        self._indicators[self.active_id].place(
+            relx=.5, rely=1, relwidth=1, anchor="s"
+        )
 
     def _label(self, category):
-        return f"{category.get('icon', '')}  {category_label(category, self.language)}".strip()
+        # La referencia usa tabs limpios; no se muestran iconos en los botones.
+        return category_label(category, self.language)
 
     def set_language(self, language):
         self.language = language
@@ -67,7 +84,7 @@ class TopNav(ctk.CTkFrame):
     def _separator(self, column):
         separator = ctk.CTkFrame(self, width=1, fg_color=theme.BORDER_SUBTLE,
                                  corner_radius=0)
-        separator.grid(row=0, column=column, sticky="ns", pady=8)
+        separator.grid(row=0, column=column, sticky="ns", pady=12)
 
     @staticmethod
     def open_github():
@@ -77,15 +94,34 @@ class TopNav(ctk.CTkFrame):
         if category_id == self.active_id:
             return
         self._style_tab(self.active_id, False)
+        self._indicators[self.active_id].place_forget()
         self.active_id = category_id
         self._style_tab(category_id, True)
+        self._indicator_started = time.monotonic()
+        self._animate_indicator()
         self.on_select_category(category_id)
+
+    def _animate_indicator(self):
+        self._indicator_job = None
+        progress = min(1.0, (time.monotonic() - self._indicator_started) / .14)
+        width = ease_out_quint(progress)
+        self._indicators[self.active_id].place(
+            relx=.5, rely=1, relwidth=width, anchor="s"
+        )
+        if progress < 1:
+            self._indicator_job = self.after(
+                frame_delay(self._indicator_started), self._animate_indicator
+            )
 
     def _style_tab(self, category_id, active):
         self._tabs[category_id].configure(
-            fg_color=theme.RED_GHOST if active else "transparent",
+            fg_color=theme.BG_GLASS_HOVER if active else "transparent",
             text_color=theme.RED_BRIGHT if active else theme.TEXT_SECONDARY,
             font=theme.FONT_TAB_ACTIVE if active else theme.FONT_TAB,
-            border_width=2 if active else 0,
-            border_color=theme.RED_BRIGHT,
+            border_width=0,
         )
+
+    def destroy(self):
+        if self._indicator_job is not None:
+            self.after_cancel(self._indicator_job)
+        super().destroy()

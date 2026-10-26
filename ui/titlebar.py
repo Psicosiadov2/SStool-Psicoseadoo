@@ -4,6 +4,7 @@ import customtkinter as ctk
 
 from core import theme
 from core.config import APP_NAME, DISCORD_INVITE
+from core.windows_shell import get_work_area
 
 
 class TitleBar(ctk.CTkFrame):
@@ -14,12 +15,12 @@ class TitleBar(ctk.CTkFrame):
             master,
             height=theme.TITLEBAR_HEIGHT,
             fg_color=theme.BG_TITLEBAR,
-            corner_radius=0,
+            corner_radius=theme.SHELL_RADIUS,
         )
         self.app = app
         self.on_language = on_language
         self._maximized = False
-        self._prev_geometry = None
+        self._windowed_geometry = None
         self._drag_start = (0, 0)
 
         self.grid_propagate(False)
@@ -27,7 +28,11 @@ class TitleBar(ctk.CTkFrame):
         self.grid_columnconfigure(1, weight=1)
 
         brand = ctk.CTkFrame(self, fg_color="transparent")
-        brand.grid(row=0, column=0, sticky="w", padx=(8, 0))
+        brand.grid(row=0, column=0, sticky="w", padx=(14, 0))
+        ctk.CTkFrame(
+            brand, width=3, height=28, fg_color=theme.RED_BRIGHT,
+            corner_radius=2,
+        ).pack(side="left", padx=(0, 9))
         brand_text = ctk.CTkFrame(brand, fg_color="transparent")
         brand_text.pack(side="left")
         brand_name = ctk.CTkLabel(
@@ -59,7 +64,7 @@ class TitleBar(ctk.CTkFrame):
             values=["EN", "ES"],
             width=76,
             height=24,
-            corner_radius=5,
+            corner_radius=7,
             border_width=1,
             fg_color=theme.BG_TITLEBAR,
             selected_color=theme.RED_GHOST,
@@ -85,7 +90,9 @@ class TitleBar(ctk.CTkFrame):
 
 
         self._window_button(right, "−", self.minimize)
-        self._window_button(right, "□", self.toggle_maximize)
+        self.maximize_button = self._window_button(
+            right, "□", self.toggle_fullscreen
+        )
         self._window_button(right, "×", self.close, close=True)
 
         ctk.CTkFrame(
@@ -98,7 +105,8 @@ class TitleBar(ctk.CTkFrame):
         for widget in (self, brand, brand_name, self.brand_caption, brand_text, drag_zone):
             widget.bind("<ButtonPress-1>", self._start_move)
             widget.bind("<B1-Motion>", self._do_move)
-            widget.bind("<Double-Button-1>", lambda _event: self.toggle_maximize())
+            widget.bind("<Double-Button-1>", lambda _event: self.toggle_fullscreen())
+        self.app.bind("<Escape>", self._leave_fullscreen, add="+")
 
     def _select_language(self, value):
         if self.on_language:
@@ -119,7 +127,7 @@ class TitleBar(ctk.CTkFrame):
         button = ctk.CTkButton(
             parent,
             text=symbol,
-            width=38,
+            width=36,
             height=theme.TITLEBAR_HEIGHT,
             corner_radius=0,
             fg_color="transparent",
@@ -147,18 +155,34 @@ class TitleBar(ctk.CTkFrame):
     def minimize(self):
         self.app.minimize_to_taskbar()
 
-    def toggle_maximize(self):
+    def toggle_fullscreen(self):
+        """Alterna entre ventana normal y el area completa util de Windows."""
         if self._maximized:
-            if self._prev_geometry:
-                self.app.geometry(self._prev_geometry)
-            self._maximized = False
+            self._leave_fullscreen()
             return
-
-        self._prev_geometry = self.app.geometry()
-        width = self.app.winfo_screenwidth()
-        height = self.app.winfo_screenheight()
-        self.app.geometry(f"{width}x{height}+0+0")
+        self.app.update_idletasks()
+        self._windowed_geometry = self.app.geometry()
+        x, y, width, height = get_work_area(self.app)
+        self.app.tk.call(
+            "wm", "geometry", self.app._w,
+            f"{width}x{height}{x:+d}{y:+d}",
+        )
         self._maximized = True
+        self.maximize_button.configure(text="❐")
+        if hasattr(self.app, "resize_handles"):
+            self.app.resize_handles.set_enabled(False)
+
+    def _leave_fullscreen(self, _event=None):
+        if not self._maximized:
+            return
+        if self._windowed_geometry:
+            self.app.tk.call(
+                "wm", "geometry", self.app._w, self._windowed_geometry
+            )
+        self._maximized = False
+        self.maximize_button.configure(text="□")
+        if hasattr(self.app, "resize_handles"):
+            self.app.resize_handles.set_enabled(True)
 
     def close(self):
         self.app.close_app()

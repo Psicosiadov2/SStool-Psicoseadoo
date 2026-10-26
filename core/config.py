@@ -3,9 +3,9 @@ Configuracion general / branding de la app.
 Cambia estos valores por los tuyos antes de compilar el .exe.
 """
 
-APP_NAME = "PsicoseadoSSTool"
+APP_NAME = "SSTool+"
 APP_SUBTITLE = ""
-DISCORD_INVITE = "discord.gg/Eux3UUKvXg"
+DISCORD_INVITE = "discord.gg/bhD5sheFf4"
 APP_USER_MODEL_ID = "Psicoseado.SSTool"
 APP_ICON_PNG = "PsicoseadoSSTool.png"
 APP_ICON_ICO = "PsicoseadoSSTool.ico"

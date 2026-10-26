@@ -4,10 +4,10 @@ import customtkinter as ctk
 from core import theme
 from core.i18n import category_label, tr
 from ui.card import ToolCard
-from ui.motion import frame_delay
+from ui.motion import ease_out_quint, frame_delay
 
 
-MAX_COLUMNS = 4
+MAX_COLUMNS = 3
 
 
 class ContentArea(ctk.CTkFrame):
@@ -42,7 +42,7 @@ class ContentArea(ctk.CTkFrame):
         )
 
         left = ctk.CTkFrame(header, fg_color="transparent")
-        left.pack(side="left", fill="y", padx=(10, 0), pady=(14, 10))
+        left.pack(side="left", fill="y", padx=(16, 0), pady=(13, 9))
         self.title_label = ctk.CTkLabel(
             left,
             text="",
@@ -52,6 +52,18 @@ class ContentArea(ctk.CTkFrame):
         )
         self.title_label.pack(fill="x")
 
+        decoration = ctk.CTkFrame(header, fg_color="transparent")
+        decoration.pack(side="right", padx=(0, 18), pady=14)
+        for width, color in (
+            (56, theme.RED_DIM),
+            (34, theme.RED_PRIMARY),
+            (16, theme.GLASS_HIGHLIGHT),
+        ):
+            ctk.CTkFrame(
+                decoration, width=width, height=2,
+                fg_color=color, corner_radius=1,
+            ).pack(side="left", padx=3)
+
         ctk.CTkFrame(
             self,
             height=1,
@@ -60,7 +72,7 @@ class ContentArea(ctk.CTkFrame):
         ).pack(fill="x")
 
         self.viewport = ctk.CTkFrame(self, fg_color=theme.BG_CONTENT, corner_radius=0)
-        self.viewport.pack(fill="both", expand=True, padx=(0, 5), pady=(0, 5))
+        self.viewport.pack(fill="both", expand=True, padx=(8, 8), pady=(2, 8))
         self.scroll = ctk.CTkScrollableFrame(
             self.viewport,
             fg_color="transparent",
@@ -71,8 +83,13 @@ class ContentArea(ctk.CTkFrame):
             scrollbar_button_hover_color=theme.SCROLLBAR_HOVER,
         )
         self.scroll.place(x=0, y=0, relwidth=1, relheight=1)
+        self.transition_glow = ctk.CTkFrame(
+            self.viewport,
+            height=1,
+            fg_color=theme.RED_BRIGHT,
+            corner_radius=0,
+        )
         self._configure_columns()
-        self.bind("<Configure>", self._on_resize)
 
     def set_busy(self, busy):
         if busy == self._busy:
@@ -107,12 +124,18 @@ class ContentArea(ctk.CTkFrame):
     def _transition_step(self):
         self._transition_job = None
         progress = min(1.0, (time.monotonic() - self._transition_started) / .18)
-        for card in self._visible_cards:
-            card.set_motion_progress(progress)
-        # Move the existing container, without changing card widths or layout.
-        self.scroll.place(x=0, y=round(10 * (1 - progress) ** 3), relwidth=1, relheight=1)
+        eased = ease_out_quint(progress)
+        self.scroll.place(
+            x=0,
+            y=round(12 * (1 - eased)),
+            relwidth=1,
+            relheight=1,
+        )
+        self.transition_glow.place(x=0, y=0, relwidth=eased)
         if progress < 1:
             self._transition_job = self.after(frame_delay(self._transition_started), self._transition_step)
+        else:
+            self.transition_glow.place_forget()
 
     def _reset_scroll_after_layout(self):
         if self._scroll_reset_job is not None:
@@ -133,22 +156,25 @@ class ContentArea(ctk.CTkFrame):
 
     def prepare_cards(self, categories):
         self._warmup_entries = iter((cat["id"], tool) for cat in categories for tool in cat["tools"])
-        self._warmup_job = self.after(20, self._prepare_next_card)
+        self._warmup_job = self.after_idle(self._prepare_next_cards)
 
-    def _prepare_next_card(self):
+    def _prepare_next_cards(self):
         self._warmup_job = None
-        entry = next(self._warmup_entries, None)
-        if entry is not None:
+        prepared = 0
+        while prepared < 8:
+            entry = next(self._warmup_entries, None)
+            if entry is None:
+                return
             self._get_card(*entry)
-            self._warmup_job = self.after(10, self._prepare_next_card)
+            prepared += 1
+        self._warmup_job = self.after_idle(self._prepare_next_cards)
 
     def _stop_transition(self):
         if self._transition_job is not None:
             self.after_cancel(self._transition_job)
             self._transition_job = None
         self.scroll.place(x=0, y=0, relwidth=1, relheight=1)
-        for card in self._visible_cards:
-            card.set_motion_progress(1)
+        self.transition_glow.place_forget()
 
     def destroy(self):
         self._stop_transition()
@@ -156,20 +182,6 @@ class ContentArea(ctk.CTkFrame):
             if job is not None:
                 self.after_cancel(job)
         super().destroy()
-
-    def _on_resize(self, event):
-        if event.width >= 1220:
-            columns = 4
-        elif event.width >= 960:
-            columns = 3
-        else:
-            columns = 2
-        if columns == self.columns:
-            return
-        self.columns = columns
-        self._configure_columns()
-        if self.category:
-            self._render()
 
     def _configure_columns(self):
         for column in range(MAX_COLUMNS):

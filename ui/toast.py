@@ -16,8 +16,8 @@ class ToastBanner(ctk.CTkFrame):
             height=1,
             fg_color=theme.BG_ELEVATED,
             border_width=1,
-            border_color=theme.RED_DARK,
-            corner_radius=6,
+            border_color=theme.CARD_BORDER_HOVER,
+            corner_radius=10,
         )
         self.language = language
         ctk.CTkFrame(

@@ -1,0 +1,27 @@
+<body>
+<style>
+body{height:100vh;min-height:0;padding:12px;overflow:hidden}.window{width:100%;height:100%;min-height:0!important}.titlebar,.nav,.footer{flex-shrink:0}main{overflow:auto;min-height:0}.grid{min-height:0}.titlebar .brand{flex:1;height:100%;display:flex;align-items:center}.heading-right{flex-wrap:wrap}.caption button,.language,.link{background:#ffffff0a;border:1px solid #ffffff25;border-radius:7px;padding:7px 10px}.card:disabled{cursor:wait;opacity:.7}.cooldown{font-size:10px!important;color:#dddddd!important}.toast{position:fixed;bottom:30px;right:30px;max-width:min(410px,90vw);z-index:20;background:#151515eb;backdrop-filter:blur(20px);border:1px solid #ffffff60;border-radius:12px;padding:16px;box-shadow:0 15px 40px #0007}.toast[hidden]{display:none}.progress-row{display:flex;align-items:center;gap:12px;margin-top:10px}.progress-row progress{width:100%;height:6px;accent-color:#eeeeee}.progress-row span{min-width:40px}.intro{position:fixed;inset:0;z-index:50;display:grid;place-content:center;text-align:center;background:#080808;background-image:radial-gradient(circle,#dddddd 1px,transparent 2px),var(--scene);background-size:80px 80px,cover;background-position:center}.intro strong{font-size:30px;text-shadow:0 0 25px #dddddd}.intro p{color:#cccccc}.intro.done{opacity:0;transition:opacity .5s;pointer-events:none}.window.waiting{visibility:hidden}::-webkit-scrollbar{width:7px}::-webkit-scrollbar-thumb{background:#ffffff50;border-radius:9px}
+</style>
+<style>
+.progress-row[hidden]{display:none}
+html,body{width:100%;height:100%;margin:0;padding:0!important}
+.window{width:100%;height:100vh;border:0!important;border-radius:0!important;box-shadow:none!important;animation:none}
+.toolbar{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:8px 22px;flex-shrink:0;flex-wrap:wrap;border-bottom:1px solid #ffffff12;background:#08080838}
+.toolbar .caption{display:inline;margin-right:auto;white-space:nowrap;font-size:11px;letter-spacing:.2px}.toolbar .search{max-width:100%}
+.language:hover,.link:hover{background:#ffffff18}
+.intro{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;background:#080808}
+.intro:before{content:'';position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,#ffffff70 1px,transparent 2px);background-size:93px 83px;animation:stars 3s ease-in-out infinite alternate}
+.intro-art{position:relative;max-height:calc(100vh - 175px);max-width:80vw;object-fit:contain;border-radius:12px;box-shadow:0 12px 60px #000a;animation:art-in .7s ease both}
+.intro strong{position:relative;font-size:22px}.intro p{position:relative;margin:0;font-size:12px}
+@keyframes stars{from{opacity:.3}to{opacity:.9}}@keyframes art-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@media(max-width:850px){.toolbar{padding:10px 18px;gap:9px}.toolbar .search{width:170px}}
+@media(prefers-reduced-motion:reduce){.intro:before,.intro-art{animation:none}}
+.titlebar{height:66px;min-height:66px;padding:0 18px 0 24px;gap:16px;background:#08080830;border-bottom:1px solid #ffffff18}.titlebar .brand{flex:1;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px}.brand strong{font-size:16px;font-weight:600;letter-spacing:.25px}.brand .caption{display:block;font-size:11px;font-weight:400;letter-spacing:.1px}.titlebar .toolbar{order:0;padding:0;background:transparent;border:0;flex-wrap:nowrap}.titlebar .window-controls{margin:0;flex-shrink:0}.titlebar button{-webkit-app-region:no-drag}
+</style>
+<div class="intro" id="intro"><img class="intro-art" src="__INTRO_IMAGE__" alt="Tal vez el bypass siempre fue inevitable"><strong>PsicoseadoSSTool</strong><p>Loading SStool Kits...</p></div>
+<section class="window waiting" aria-label="PsicoseadoSSTool">
+<header class="titlebar" id="titlebar"><div class="brand pywebview-drag-region"><strong>PsicoseadoSSTool</strong><span class="caption">Contact: Psicoseado</span></div><div class="toolbar" role="toolbar"><button class="language" id="language">EN / ES</button><button class="link" data-link="discord">Discord</button></div><div class="window-controls"><button data-window="minimize" aria-label="Minimize">−</button><button data-window="maximize" aria-label="Maximize">□</button><button data-window="close" aria-label="Close">×</button></div></header>
+<nav class="nav" role="tablist" aria-label="Categories"></nav>
+<main id="panel" role="tabpanel"><div class="heading"><div><h1 id="heading"></h1></div></div><div class="grid" id="grid"></div></main>
+</section>
+<aside class="toast" id="toast" hidden role="status"><div id="toast-text"></div><div class="progress-row" hidden><progress id="progress" max="100"></progress><span id="percent"></span></div></aside>

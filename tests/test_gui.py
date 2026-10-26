@@ -17,7 +17,7 @@ from core.cooldown import Cooldown
 from ui.card import ToolCard
 from ui.titlebar import TitleBar
 from ui.topnav import TopNav
-from core.launcher import _download_to_temp, _tool_command
+from core.launcher import _download_to_temp, _run_tool, _tool_command, launch_tool
 from core.i18n import DEFAULT_LANGUAGE, category_label, tool_description
 
 
@@ -25,7 +25,7 @@ class GuiTests(unittest.TestCase):
     def test_discord_opens_https_invite(self):
         with patch("ui.titlebar.webbrowser.open_new_tab") as open_url:
             TitleBar.open_discord(Mock())
-        open_url.assert_called_once_with("https://discord.gg/Eux3UUKvXg")
+        open_url.assert_called_once_with("https://discord.gg/bhD5sheFf4")
 
     def test_github_button_opens_psicoseado_profile(self):
         with patch("ui.topnav.webbrowser.open_new_tab") as open_url:
@@ -225,19 +225,59 @@ class GuiTests(unittest.TestCase):
         app.iconify.assert_not_called()
         app.overrideredirect.assert_not_called()
 
+    def test_maximize_uses_work_area_and_disables_resize_handles(self):
+        app = Mock(_w=".app")
+        app.geometry.return_value = "1000x700+16+24"
+        titlebar = Mock(
+            _maximized=False,
+            _windowed_geometry=None,
+            app=app,
+            maximize_button=Mock(),
+        )
+        with patch("ui.titlebar.get_work_area", return_value=(0, 0, 1920, 1040)):
+            TitleBar.toggle_fullscreen(titlebar)
+        app.tk.call.assert_called_once_with(
+            "wm", "geometry", ".app", "1920x1040+0+0"
+        )
+        app.resize_handles.set_enabled.assert_called_once_with(False)
+        titlebar.maximize_button.configure.assert_called_once_with(text="❐")
+        self.assertTrue(titlebar._maximized)
+
+    def test_restore_returns_to_exact_previous_geometry(self):
+        app = Mock(_w=".app")
+        titlebar = Mock(
+            _maximized=True,
+            _windowed_geometry="1000x700+16+24",
+            app=app,
+            maximize_button=Mock(),
+        )
+        TitleBar._leave_fullscreen(titlebar)
+        app.tk.call.assert_called_once_with(
+            "wm", "geometry", ".app", "1000x700+16+24"
+        )
+        app.resize_handles.set_enabled.assert_called_once_with(True)
+        titlebar.maximize_button.configure.assert_called_once_with(text="□")
+        self.assertFalse(titlebar._maximized)
+
     def test_inventory(self):
-        self.assertEqual(sum(len(c["tools"]) for c in CATEGORIES), 42)
+        self.assertEqual(sum(len(c["tools"]) for c in CATEGORIES), 123)
+        by_category = {c["id"]: {t["name"]: t for t in c["tools"]} for c in CATEGORIES}
+        for category, name in (("orbdiff", "Web Hollowing"),
+                               ("nirsoft", "MarsPixelDumpAnalyzer"),
+                               ("nirsoft", "Browser Checker")):
+            self.assertTrue(by_category[category][name]["run_as_admin"])
 
     def test_requested_category_and_tool_order(self):
         self.assertEqual(CATEGORIES[0]["label"], "Orbdiff/Others")
         main_names = [tool["name"] for tool in CATEGORIES[0]["tools"]]
-        self.assertEqual(main_names[4], "ConsoleHostHistory")
-        self.assertEqual(main_names[5], "Eventvwr")
-        self.assertEqual(main_names[main_names.index("P1AE Scanner") + 1], "Siege")
-        script_names = [tool["name"] for tool in CATEGORIES[3]["tools"]]
+        self.assertNotIn("ConsoleHostHistory", main_names)
+        self.assertNotIn("Eventvwr", main_names)
+        self.assertNotIn("Siege", main_names)
+        script_names = [tool["name"] for tool in next(c for c in CATEGORIES if c['id'] == 'scripts')["tools"]]
         self.assertEqual(script_names[1], "Lilith Script")
         self.assertEqual(script_names[4], "Lilith DoomsDay Finder")
         self.assertIn("Habibi Mod Analyzer", script_names)
+        self.assertIn("Macro Catcher", script_names)
         self.assertIn("Real Doomsday Detector", script_names)
         self.assertNotIn("Zeedoonvm1 Doomsday Detector", script_names)
 
@@ -247,22 +287,50 @@ class GuiTests(unittest.TestCase):
         self.assertIn("WindowsDesktop/9.0.14", dependencies[".NET 9.0"]["url"])
 
     def test_event_viewer_uses_native_windows_launcher(self):
-        event_viewer = next(t for t in CATEGORIES[0]["tools"] if t["name"] == "Eventvwr")
+        event_viewer = next(t for c in CATEGORIES for t in c["tools"] if t["name"] == "Eventvwr")
         self.assertEqual(_tool_command(None, event_viewer), ["eventvwr.exe"])
 
+    def test_virustotal_opens_in_default_browser(self):
+        tool = next(t for c in CATEGORIES if c['id'] == 'nirsoft' for t in c['tools'] if t['name'] == 'VirusTotal')
+        with patch("core.launcher.webbrowser.open_new_tab", return_value=True) as open_url:
+            self.assertTrue(launch_tool("nirsoft", tool))
+        open_url.assert_called_once_with("https://www.virustotal.com/gui/home/upload")
+
+    def test_macro_tools_request_administrator(self):
+        scripts = {tool["name"]: tool for c in CATEGORIES if c['id'] == 'scripts' for tool in c['tools']}
+        others = {tool["name"]: tool for c in CATEGORIES if c['id'] == 'nirsoft' for tool in c['tools']}
+        self.assertTrue(scripts["Macro Catcher"]["run_as_admin"])
+        self.assertTrue(others["MacroScanner"]["run_as_admin"])
+        self.assertEqual(
+            others["MacroScanner"]["url"],
+            "https://github.com/Lafferrr/MacroScanner/releases/download/MAW/MacroScanner.exe",
+        )
+        self.assertIn("catchmacro.ps1')\"", scripts["Macro Catcher"]["cmd_command"])
+
+    @patch("core.launcher.sys.platform", "win32")
+    @patch("core.launcher._run_command_elevated")
+    def test_admin_cmd_command_uses_cmd_with_literal_arguments(self, elevated):
+        tool = {
+            "cmd_command": "powershell -Command \"Write-Host ok\"",
+            "run_as_admin": True,
+        }
+        self.assertTrue(_run_tool(None, tool))
+        self.assertEqual(
+            elevated.call_args.kwargs["raw_arguments"],
+            '/d /k powershell -Command "Write-Host ok"',
+        )
+
     def test_new_tools_use_stable_sources_and_admin(self):
-        tools = {tool["name"]: tool for tool in CATEGORIES[0]["tools"]}
+        tools = {tool["name"]: tool for category in CATEGORIES for tool in category["tools"]}
         self.assertEqual(tools["VMAware"]["url"], "https://github.com/NotRequiem/VMAware/releases/download/v2.8.2/vmaware32.exe")
-        self.assertEqual(tools["Siege"]["url"], "https://github.com/praiselily/Siege/releases/download/Scanner/Siege.exe")
         self.assertTrue(tools["VMAware"]["run_as_admin"])
-        self.assertTrue(tools["Siege"]["run_as_admin"])
 
     def test_language_defaults_to_english_and_translates(self):
         self.assertEqual(DEFAULT_LANGUAGE, "en")
         self.assertEqual(category_label(CATEGORIES[0], "es"), "Orbdiff/Otros")
-        siege = next(t for t in CATEGORIES[0]["tools"] if t["name"] == "Siege")
-        self.assertIn("Minecraft", tool_description(siege, "en"))
-        self.assertIn("Minecraft", tool_description(siege, "es"))
+        vmaware = next(t for c in CATEGORIES for t in c["tools"] if t["name"] == "VMAware")
+        self.assertIn("machine", tool_description(vmaware, "en"))
+        self.assertIn("virtuales", tool_description(vmaware, "es"))
 
 
 if __name__ == "__main__":

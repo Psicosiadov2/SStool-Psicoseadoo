@@ -15,17 +15,17 @@ la app crea automaticamente la carpeta tools/<categoria>/ al lado del .exe.
 """
 
 def main():
+    import multiprocessing
+    multiprocessing.freeze_support()
     # Keep imports inside the guard: missing bundled modules must also be logged.
     from core.startup_errors import report_error
     try:
         from core.elevation import ensure_admin
         from core.windows_shell import configure_process_identity
-        from ui.app import App
+        from ui.web_app import run
         if ensure_admin():
             configure_process_identity()
-            app = App()
-            app.report_callback_exception = report_error
-            app.mainloop()
+            run()
         return 0
     except Exception:
         import sys

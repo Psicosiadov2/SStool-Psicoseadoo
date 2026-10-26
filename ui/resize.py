@@ -27,7 +27,7 @@ class ResizeHandles:
         self.app = app
         self.start = None
         self.handles = []
-        layouts = {
+        self.layouts = {
             "n": dict(relx=0, rely=0, relwidth=1, height=5),
             "s": dict(relx=0, rely=1, relwidth=1, height=5, anchor="sw"),
             "w": dict(relx=0, rely=0, relheight=1, width=5),
@@ -37,7 +37,7 @@ class ResizeHandles:
             "sw": dict(relx=0, rely=1, width=10, height=10, anchor="sw"),
             "se": dict(relx=1, rely=1, width=10, height=10, anchor="se"),
         }
-        for edge, layout in layouts.items():
+        for edge, layout in self.layouts.items():
             cursor = {"n": "sb_v_double_arrow", "s": "sb_v_double_arrow",
                       "w": "sb_h_double_arrow", "e": "sb_h_double_arrow",
                       "nw": "top_left_corner", "ne": "top_right_corner",
@@ -49,7 +49,16 @@ class ResizeHandles:
             handle.bind("<ButtonPress-1>", lambda event, e=edge: self.begin(event, e))
             handle.bind("<B1-Motion>", self.drag)
             handle.bind("<ButtonRelease-1>", self.end)
-            self.handles.append(handle)
+            self.handles.append((edge, handle))
+
+    def set_enabled(self, enabled):
+        """Oculta los hitboxes al maximizar y los repone al restaurar."""
+        for edge, handle in self.handles:
+            if enabled:
+                handle.place(**self.layouts[edge])
+                handle.lift()
+            else:
+                handle.place_forget()
 
     def begin(self, event, edge):
         if self.app.titlebar._maximized:

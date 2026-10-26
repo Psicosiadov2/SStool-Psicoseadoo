@@ -5,10 +5,12 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
-# Local environments
+# Local environments y compilador (no se suben)
 .venv/
 venv/
 .build-venv*/
+.glass-venv/
+.nuitka-venv/
 
 # Nuitka and local builds
 dist/
@@ -34,3 +36,10 @@ Desktop.ini
 *.log
 *.tmp
 *.bak
+
+# Resultado de la compilacion
+*.exe
+*.spec
+*.zip
+_manual_zips/
+ultimo_error_descarga.log

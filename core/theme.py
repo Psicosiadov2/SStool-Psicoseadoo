@@ -1,45 +1,53 @@
-"""Tema minimalista negro y gris de PsicoseadoSSTool."""
+"""Tema glassmorphism azul oscuro de PsicoseadoSSTool."""
 
 import tkinter.font as tkfont
 
 # ---- Superficies ----
-BG_APP = "#000000"
-BG_TITLEBAR = "#030303"
-BG_TOPNAV = "#050505"
-BG_CONTENT = "#080808"
-BG_ELEVATED = "#0a0a0a"
+BG_APP = "#020814"
+BG_TITLEBAR = "#071528"
+BG_TOPNAV = "#08182c"
+BG_CONTENT = "#061222"
+BG_ELEVATED = "#0d2139"
+BG_GLASS = "#091a2e"
+BG_GLASS_HOVER = "#102d49"
+BG_GLASS_LIGHT = "#143653"
+BG_GLASS_DEEP = "#07111f"
 
 # ---- Tarjetas ----
-CARD_BG = "#0d0d0d"
-CARD_BG_HOVER = "#161616"
-CARD_BORDER = "#212121"
-CARD_BORDER_HOVER = "#747474"
+CARD_BG = "#0e233a"
+CARD_BG_HOVER = "#153754"
+CARD_BORDER = "#23496b"
+CARD_BORDER_HOVER = "#65baff"
 
-# ---- Gris ----
-RED_PRIMARY = "#8e8e8e"
-RED_BRIGHT = "#aaaaaa"
-RED_HOVER = "#717171"
-RED_DARK = "#353535"
-RED_MUTED = "#848484"
-RED_DIM = "#535353"
-RED_GHOST = "#111111"
+# ---- Acentos (se mantienen los nombres por compatibilidad interna) ----
+RED_PRIMARY = "#319cff"
+RED_BRIGHT = "#69c2ff"
+RED_HOVER = "#2288df"
+RED_DARK = "#123a60"
+RED_MUTED = "#5996c2"
+RED_DIM = "#28587c"
+RED_GHOST = "#102a44"
 
-# ---- Texto (tonos grises) ----
-TEXT_HEADING = "#aaaaaa"
-TEXT_PRIMARY = "#aaaaaa"
-TEXT_SECONDARY = "#aaaaaa"
-TEXT_MUTED = "#aaaaaa"
-TEXT_FAINT = "#aaaaaa"
-TEXT_ON_ACCENT = "#aaaaaa"
+# ---- Texto ----
+TEXT_HEADING = "#f2f8ff"
+TEXT_PRIMARY = "#d9ebfa"
+TEXT_SECONDARY = "#aec9df"
+TEXT_MUTED = "#7fa0bc"
+TEXT_FAINT = "#5f809b"
+TEXT_ON_ACCENT = "#ffffff"
 
 # ---- Bordes / separadores ----
-BORDER_SUBTLE = "#212121"
-BORDER_STRONG = "#3d3d3d"
+BORDER_SUBTLE = "#183650"
+BORDER_STRONG = "#35678d"
+BORDER_GLOW = "#3d9ee8"
+GLASS_HIGHLIGHT = "#76caff"
+GLASS_REFLECTION = "#2b6085"
+AMBIENT_BLUE = "#0d3c68"
 
 # ---- Scrollbar ----
-SCROLLBAR_TRACK = "#050505"
-SCROLLBAR = "#353535"
-SCROLLBAR_HOVER = "#717171"
+SCROLLBAR_TRACK = "#071426"
+SCROLLBAR = "#245478"
+SCROLLBAR_HOVER = "#3c8ac0"
 
 # ---- Fuentes ----
 FONT_FAMILY = "Segoe UI"
@@ -66,37 +74,38 @@ def configure_fonts(root):
     FONT_DISPLAY = FONT_FAMILY
     FONT_MONO = choose("Cascadia Mono", "Consolas")
 
-    FONT_BRAND = (FONT_DISPLAY, 15, "bold")
-    FONT_TITLE = (FONT_DISPLAY, 18, "bold")
-    FONT_EYEBROW = (FONT_FAMILY, 11, "bold")
-    FONT_SECTION_TITLE = (FONT_DISPLAY, 14, "bold")
-    FONT_TAB = (FONT_FAMILY, 12)
-    FONT_TAB_ACTIVE = (FONT_FAMILY, 12, "bold")
-    FONT_CARD_TITLE = (FONT_DISPLAY, 14, "bold")
-    FONT_CARD_DESC = (FONT_FAMILY, 12)
-    FONT_SMALL = (FONT_FAMILY, 11)
-    FONT_BUTTON = (FONT_FAMILY, 11, "bold")
+    FONT_BRAND = (FONT_DISPLAY, 14, "bold")
+    FONT_TITLE = (FONT_DISPLAY, 17, "bold")
+    FONT_EYEBROW = (FONT_FAMILY, 10, "bold")
+    FONT_SECTION_TITLE = (FONT_DISPLAY, 13, "bold")
+    FONT_TAB = (FONT_FAMILY, 11)
+    FONT_TAB_ACTIVE = (FONT_FAMILY, 11, "bold")
+    FONT_CARD_TITLE = (FONT_DISPLAY, 11, "bold")
+    FONT_CARD_DESC = (FONT_FAMILY, 9)
+    FONT_SMALL = (FONT_FAMILY, 9)
+    FONT_BUTTON = (FONT_FAMILY, 10, "bold")
     FONT_WINDOW_CONTROL = (FONT_FAMILY, 12)
 
 
 # Valores iniciales; App los recalcula contra las fuentes instaladas.
-FONT_BRAND = (FONT_DISPLAY, 15, "bold")
-FONT_TITLE = (FONT_DISPLAY, 18, "bold")
-FONT_EYEBROW = (FONT_FAMILY, 11, "bold")
-FONT_SECTION_TITLE = (FONT_DISPLAY, 14, "bold")
-FONT_TAB = (FONT_FAMILY, 12)
-FONT_TAB_ACTIVE = (FONT_FAMILY, 12, "bold")
-FONT_CARD_TITLE = (FONT_DISPLAY, 14, "bold")
-FONT_CARD_DESC = (FONT_FAMILY, 12)
-FONT_SMALL = (FONT_FAMILY, 11)
-FONT_BUTTON = (FONT_FAMILY, 11, "bold")
+FONT_BRAND = (FONT_DISPLAY, 14, "bold")
+FONT_TITLE = (FONT_DISPLAY, 17, "bold")
+FONT_EYEBROW = (FONT_FAMILY, 10, "bold")
+FONT_SECTION_TITLE = (FONT_DISPLAY, 13, "bold")
+FONT_TAB = (FONT_FAMILY, 11)
+FONT_TAB_ACTIVE = (FONT_FAMILY, 11, "bold")
+FONT_CARD_TITLE = (FONT_DISPLAY, 11, "bold")
+FONT_CARD_DESC = (FONT_FAMILY, 9)
+FONT_SMALL = (FONT_FAMILY, 9)
+FONT_BUTTON = (FONT_FAMILY, 10, "bold")
 FONT_WINDOW_CONTROL = (FONT_FAMILY, 12)
 
 # ---- Layout ----
-TITLEBAR_HEIGHT = 54
-TOPNAV_HEIGHT = 48
-CONTENT_HEADER_HEIGHT = 58
-CARD_HEIGHT = 182
-CARD_PAD_X = 5
-CARD_PAD_Y = 5
-CORNER_RADIUS = 2
+TITLEBAR_HEIGHT = 46
+TOPNAV_HEIGHT = 46
+CONTENT_HEADER_HEIGHT = 50
+CARD_HEIGHT = 112
+CARD_PAD_X = 6
+CARD_PAD_Y = 6
+CORNER_RADIUS = 9
+SHELL_RADIUS = 16
