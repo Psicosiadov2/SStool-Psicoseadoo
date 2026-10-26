@@ -39,11 +39,6 @@ Los ejecutables se descargan en `tools/<categoria>/`, se validan como archivos P
 4. Ejecuta `python -m pip install -r requirements.txt`.
 5. Ejecuta `python main.py`.
 
-## Crear el ejecutable
-
-1. Instala Python 3.12 x64 desde python.org, incluyendo Tcl/Tk y Python Launcher. Puedes conservar Python 3.13 o 3.14 instalado.
-2. Ejecuta `BUILD_EXE.bat`.
-3. El resultado será `dist\PsicoseadoSSTool.exe`.
 
 El instalador de dependencias no utiliza la caché global de `pip`, evitando
 errores de permisos causados por ruedas bloqueadas o creadas por otro usuario.
